@@ -6,7 +6,7 @@ class OrbitDynamicsStatus{
   float Mass; // 質量
   
   // コンストラクタ
-  OrbitDynamicsStatus(PVector _Position, PVector _Velocity, PVector _Mass){
+  OrbitDynamicsStatus(PVector _Position, PVector _Velocity, float _Mass){
     this.Position = _Position;
     this.Velocity = _Velocity;
     this.Mass = _Mass;
@@ -17,19 +17,21 @@ class OrbitDynamicsStatus{
     // 発生する力の大きさの計算
     float GravitationForce, Distance;// 万有引力と距離を格納する変数
     Distance = this.Position.dist(OtherPosition); // 万有引力を計算する相手方の距離を算出
-    GravitationForce = (OtherMass)/Distance // 万有引力により発生する加速度
+    GravitationForce = (OtherMass)/Distance; // 万有引力により発生する加速度
+    //print(this.Position);
     // 発生する力の方向の計算
-    PVector acceleration;
-    acceleration.set(OtherPosition.x-this.Position.x, OtherPosition.y-this.Position.y) // 相対位置ベクトルの計算
+    PVector acceleration = new PVector(0,0);
+    acceleration.set(OtherPosition.x-this.Position.x, OtherPosition.y-this.Position.y); // 相対位置ベクトルの計算
     acceleration.normalize(); // 単位ベクトルに
     // 力の方向と大きさの積で万有引力が計算できた
-    this.Acceleration.set(acceleration.mult(GravitationForce))
+    this.Acceleration.set(acceleration.mult(GravitationForce));
   }
 
   // 速度・位置の更新関数
   void StatusUpdate(float dt){
     // 本当はRK4とかにしたほうがいいけどとりあえず放置
     PVector work;
+    work = new PVector(0,0);
     //加速度ベクトル～新速度,新位置確定
     work.set(this.Acceleration);//汎用ベクトル化.
     work.mult(dt);//速度の変化量を求める.
