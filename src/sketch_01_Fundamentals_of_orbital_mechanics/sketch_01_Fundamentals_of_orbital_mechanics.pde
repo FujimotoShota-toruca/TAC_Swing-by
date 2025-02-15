@@ -74,7 +74,7 @@ void satellite(){
   satellite_dp.x=satellite_v.x*dt;
   satellite_dp.y=satellite_v.y*dt;
   satellite_p.add(satellite_dp.x,satellite_dp.y);
-  
+
   println(stat_sat_prm+cont*10);
   
   if(sq(satellite_p.x)+sq(satellite_p.y)+sq(satellite_p.z)<sq(100) || sq(satellite_p.x)+sq(satellite_p.y)+sq(satellite_p.z)>sq(1000)){
