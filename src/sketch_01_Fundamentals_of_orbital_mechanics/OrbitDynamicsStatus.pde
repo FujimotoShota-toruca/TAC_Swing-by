@@ -27,7 +27,7 @@ class OrbitDynamicsStatus{
   }
 
   // 速度・位置の更新関数
-  void StateusUpdate(float dt){
+  void StatusUpdate(float dt){
     // 本当はRK4とかにしたほうがいいけどとりあえず放置
     PVector work;
     //加速度ベクトル～新速度,新位置確定
