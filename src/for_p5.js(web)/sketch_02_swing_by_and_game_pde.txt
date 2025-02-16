@@ -1,0 +1,181 @@
+let earth, moon, probe;
+let file = [];
+let LABIT_status = 0;
+let T_flag = 0;
+let dt = 0.1;
+const w = 1200 / 2;
+const h = 900 / 2;
+
+class Planet {
+  constructor(Px, Py, Vx, Vy, R, M) {
+    this.P = createVector(Px, Py); // 位置ベクトル
+    this.V = createVector(Vx, Vy); // 速度ベクトル
+    this.a = createVector(0, 0); // 加速度ベクトル
+    this.radius = R; // 半径
+    this.mass = M; // 質量
+    this.work = createVector(0, 0); // 汎用ベクトル
+  }
+
+  Point(R, G, B) {
+    stroke(R, G, B);
+    strokeWeight(5);
+    point(this.P.x, this.P.y);
+  }
+
+  Ellipse(R, G, B) {
+    fill(R, G, B);
+    stroke(R, G, B);
+    ellipse(this.P.x, this.P.y, this.radius * 2, this.radius * 2);
+  }
+
+  Acc(a_p, a_mass) {
+    let dist_p = this.P.dist(a_p);
+    let F = a_mass / (dist_p * dist_p);
+    this.work.set(a_p.x - this.P.x, a_p.y - this.P.y);
+    this.work.normalize();
+    this.work.mult(F);
+    this.a.set(this.work);
+  }
+
+  New() {
+    this.work.set(this.a);
+    this.work.mult(dt);
+    this.V.add(this.work);
+
+    this.work.set(this.V);
+    this.work.mult(dt);
+    this.P.add(this.work);
+  }
+}
+
+class Artificial extends Planet {
+  constructor(Px, Py, Vx, Vy, R, M, F) {
+    super(Px, Py, Vx, Vy, R, M);
+    this.u_fuel = 1; // 使用する燃料
+    this.v_fuel = 50; // 燃料の噴射速度
+    this.fuel = F; // 初期燃料
+  }
+
+  Acc(one_P, more_P, one_m, more_m) {
+    let dist_p = this.P.dist(one_P);
+    let F = one_m / (dist_p * dist_p);
+    this.work.set(one_P.x - this.P.x, one_P.y - this.P.y);
+    this.work.normalize();
+    this.work.mult(F);
+    this.a.set(this.work);
+
+    dist_p = this.P.dist(more_P);
+    F = more_m / (dist_p * dist_p);
+    this.work.set(more_P.x - this.P.x, more_P.y - this.P.y);
+    this.work.normalize();
+    this.work.mult(F);
+    this.a.add(this.work);
+  }
+
+  thrustar() {
+    if (this.fuel > 0) {
+      if (keyIsPressed) {
+        let b_fuel = this.fuel;
+        this.fuel -= this.u_fuel;
+        let delta_V = this.u_fuel / (this.mass + b_fuel);
+        this.work.set(this.V);
+        this.work.normalize();
+        this.work.mult(this.v_fuel * delta_V);
+
+        if (keyCode === UP_ARROW) {
+          this.V.add(this.work);
+          T_flag = 1;
+        }
+        if (keyCode === DOWN_ARROW) {
+          this.V.sub(this.work);
+          T_flag = -1;
+        }
+      }
+    }
+  }
+}
+
+function setup() {
+  //createCanvas(1600, 900);
+  createCanvas(windowWidth, windowHeight);
+  //print(windowWidth);
+  //print(windowHeight);
+  frameRate(60);
+  start_screen();
+}
+
+function draw() {
+  orbitPhase();
+}
+
+function start_screen() {
+  earth = new Planet(60 + w, 0 + h, 0, -0.1375, 10, 80000);
+  moon = new Planet(450 + w, 0 + h, 0, 11.5, 5, 1000);
+  probe = new Artificial(400 + w, 0 + h, 1, 10, 1, 100, 1000); // 減速スイングバイ
+   //probe = new Artificial(500 + w, 0 + h, -1, 10, 1, 100, 1000); // 加速スイングバイ
+}
+
+function orbitPhase() {
+  rectMode(CORNER);
+  fill(0, 30, 50, 10);
+  rect(0, 0, width, height);
+
+  textAlign(LEFT);
+  fill(255);
+  textSize(25);
+  text("[Key Guide]", 40, 60);
+  text("SPEED UP  :↑", 70, 95);
+  text("SPEED DOWN:↓", 70, 130);
+  text("RESTART   :R", 70, 165);
+  text("BACK MENU :E", 70, 200);
+
+  earth.Acc(moon.P, moon.mass);
+  moon.Acc(earth.P, earth.mass);
+  probe.Acc(earth.P, moon.P, earth.mass, moon.mass);
+
+  probe.thrustar();
+
+  earth.New();
+  moon.New();
+  probe.New();
+
+  strokeWeight(5);
+  earth.Ellipse(0, 200, 200);
+  moon.Ellipse(255, 255, 200);
+  probe.Ellipse(255, 0, 255);
+
+  csv_logging(earth.P);
+  csv_logging(moon.P);
+  csv_logging(probe.P);
+  csv_logging(probe.V);
+
+  file.push(T_flag);
+  T_flag = 0;
+}
+
+function csv_logging(V) {
+  file.push(`${V.x},${V.y},${V.z}`);
+}
+
+function keyReleased() {
+  if (key === 'E') {
+    saveStrings(file, 'orbit_data.csv');
+    noLoop();
+  }
+  if (key === 'R') {
+    background(0);
+    start_screen();
+  }
+}
+
+//マウスクリックしたときに実行
+function mousePressed() {
+  let fs = fullscreen();
+  fullscreen(!fs);
+}
+
+//ウィンドウサイズが変更されたときに実行される関数
+function windowResized() {
+  // print("ウィンドウサイズの変更");
+  resizeCanvas(windowWidth, windowHeight);
+}

@@ -1,0 +1,106 @@
+let earthPos = { x: 0, y: 0, z: 0 };
+let earthMass = 10000000;
+
+let statSatPrm = 0;
+let satellitePos = { x: 200, y: 0, z: 0 };
+let satelliteVel = { x: 0, y: 0, z: statSatPrm };
+let satelliteAcc = { x: 0, y: 0, z: 0 };
+let satelliteForce = { x: 0, y: 0, z: 0 };
+let satelliteMass = 2;
+
+let prevSatellitePos = { ...satellitePos };
+
+let dt = 0.02;
+let t = 0.0;
+let cont = 1;
+let flag = 0;
+
+function setup() {
+  createCanvas(800, 600, WEBGL);
+  frameRate(60);
+}
+
+function draw() {
+  //background(0);
+  rotateX(radians(-90));
+  drawEarth();
+  updateSatellite();
+  t += 0.1;
+}
+
+function drawEarth() {
+  push();
+  translate(earthPos.x, earthPos.y, earthPos.z);
+  fill(0, 0, 255);
+  noStroke();
+  sphere(55);
+  pop();
+}
+
+function updateSatellite() {
+  flag++;
+
+  // Draw trajectory
+  stroke(0, 255, 0);
+  line(prevSatellitePos.x, prevSatellitePos.y, prevSatellitePos.z, 
+       satellitePos.x, satellitePos.y, satellitePos.z);
+
+  // Draw satellite
+  push();
+  translate(satellitePos.x, satellitePos.y, satellitePos.z);
+  fill(255, 255, 0);
+  noStroke();
+  sphere(1);
+  pop();
+
+  // Save previous position
+  prevSatellitePos = { ...satellitePos };
+
+  // Compute forces
+  let distSq = sq(dist(earthPos.x, earthPos.y, earthPos.z, satellitePos.x, satellitePos.y, satellitePos.z));
+  let forceMag = earthMass / distSq;
+  let dir = createVector(satellitePos.x - earthPos.x, satellitePos.y - earthPos.y, satellitePos.z - earthPos.z).normalize();
+  satelliteForce = { x: -dir.x * forceMag, y: -dir.y * forceMag, z: -dir.z * forceMag };
+
+  // Compute acceleration
+  satelliteAcc = { x: satelliteForce.x, y: satelliteForce.y, z: satelliteForce.z };
+
+  // Compute velocity
+  satelliteVel.x += satelliteAcc.x * dt;
+  satelliteVel.y += satelliteAcc.y * dt;
+  satelliteVel.z += satelliteAcc.z * dt;
+
+  // Compute position
+  satellitePos.x += satelliteVel.x * dt;
+  satellitePos.y += satelliteVel.y * dt;
+  satellitePos.z += satelliteVel.z * dt;
+
+  if (flag > 500) {
+    satellitePos = { x: 1100, y: 0, z: 0 };
+  }
+
+  // Reset if out of bounds
+  let distFromCenter = sqrt(satellitePos.x ** 2 + satellitePos.y ** 2 + satellitePos.z ** 2);
+  if (distFromCenter < 50 || distFromCenter > 1000) {
+    satellitePos = { x: 200, y: 0, z: 0 };
+    prevSatellitePos = { ...satellitePos };
+    satelliteVel = { x: 0, y: 0, z: statSatPrm + cont * 20 };
+    cont++;
+    flag = 0;
+    if (cont > 10000) noLoop();
+  }
+}
+
+
+//マウスクリックしたときに実行
+function mousePressed() {
+  let fs = fullscreen();
+  fullscreen(!fs);
+}
+
+//ウィンドウサイズが変更されたときに実行される関数
+function windowResized() {
+  // print("ウィンドウサイズの変更");
+  resizeCanvas(windowWidth, windowHeight);
+}
+
